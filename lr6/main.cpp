@@ -1,104 +1,109 @@
-
 #include <iostream>
 #include <vector>
 #include <string>
 #include <fstream>
+#include <direct.h>
+
+#include "Queue.h"
+#include "List.h"
 
 using namespace std;
 
+string ex1Fname = "Ex1.txt",
+ex2TextFname = "Ex2_3.txt",
+
+ex2BinFname = "Ex2Bin.txt",
+ex2BinFnameIn = "Ex2BinIn.txt",
+ex2BinFnameOut = "Ex2BinOut.txt";
+
+void listTesting() {
+	List<GameRecord> testList;
+	fstream inOut;
+	//
+	char dir[255];
+	_getcwd(dir, 255);
+	//
+
+	inOut.open(ex2TextFname);
+	if (!inOut) {
+		cout << "Невозможно открыть файл: " << ex2TextFname << endl;
+		printf("Текущая директория:  %s", dir);
+	}
+	else {
+		inOut >> testList;
+		printList(testList);
+		cout << endl;
+		inOut.close();
+	}
+
+	cout << "Запись и чтение из бинарного файла" << endl;
+	testList.writeToBinary(ex2BinFname);
+	printList(testList);
+	cout << endl;
+	testList.clearList();
+	printList(testList);
+	cout << endl;
+	testList.readFromBinary(ex2BinFname);
+	printList(testList);
+
+	cout << endl << "Изменение строк" << endl;
+	testList.changeStringBinary(0, { "Game1", "Genre1", 1999 }, ex2BinFname);
+	printList(testList);
+
+	cout << endl << "Удаление строки" << endl;
+	testList.deleteStringFromBinary(0, ex2BinFname);
+	printList(testList);
+
+	cout << "Поиск игры самого раннего года выпуска" << endl;
+	cout << "Самая ранняя игра: " << testList.findFirstGameYearBinary(ex2BinFname) << endl;
+}
+
+void queueTesting() {
+	Queue<GameRecord> testQueue;
+	fstream inOut;
+	//
+	char dir[255];
+	_getcwd(dir, 255);
+	//
+	cout << endl << "Тестирование очереди" << endl;
+	inOut.open(ex2TextFname);
+	if (!inOut) {
+		cout << "Невозможно открыть файл: " << ex2TextFname << endl;
+		printf("Текущая директория:  %s", dir);
+	}
+	else {
+		inOut >> testQueue;
+		printQueue(testQueue);
+		inOut.close();
+	}
+
+	cout << "Запись и чтение из бинарного файла" << endl;
+	testQueue.writeToBinary(ex2BinFname);
+	printQueue(testQueue);
+	cout << endl;
+	testQueue.clearQueue();
+	printQueue(testQueue);
+	cout << endl;
+	testQueue.readFromBinary(ex2BinFname);
+	printQueue(testQueue);
+
+	cout << endl << "Изменение строк" << endl;
+	testQueue.changeStringBinary(0, { "Game1", "Genre1", 1999 }, ex2BinFname);
+	printQueue(testQueue);
+
+	cout << endl << "Удаление строки" << endl;
+	testQueue.deleteStringFromBinary(0, ex2BinFname);
+	printQueue(testQueue);
+
+	cout << "Поиск игры самого раннего года выпуска" << endl;
+	cout << "Самая ранняя игра: " << testQueue.findFirstGameYearBinary(ex2BinFname) << endl;
+}
 
 int main() {
+	setlocale(LC_ALL, "rus");
+	
+	listTesting();
 
-}
+	queueTesting();
 
-
-template <typename T>
-vector<vector<T>> readElemsFromFile(int iLen, int jLen, string filename) {
-	vector<vector<T>> retVal;
-	vector<T> tmpVec;
-	T tmpVal;
-
-	fstream in;
-	in.open(filename, fstream::read);
-	if (!in) {
-		cout << "Невозможно открыть файл " << filename;
-		return retVal;
-	}
-
-	for (int i = 0; i < iLen; i++) {
-		for (int j = 0; j < jLen; j++) {
-			in >> tmpVal;
-			tmpVec.push_back(tmpVal);
-		}
-		retVal.push_back(tmpVec);
-	}
-	return retVal;
-}
-
-template <typename T>
-bool writeElemsFromFile(vector<vector<T>> inVec, string filename) {
-	fstream out;
-	out.open(filename, fstream::write);
-	if (!out) {
-		cout << "Невозможно открыть файл " << filename;
-		return false;
-	}
-
-	for (int i = 0; i < inVec.size(); i++) {
-		for (int j = 0; j < inVec[i].size(); j++) {
-			out << inVec[i][j] << " ";
-		}
-		out << endl;
-	}
-	return true;
-}
-
-template <typename T>
-vector<vector <T> > getEvenLines(vector<vector<T>> inVec) {
-	vector<vector<T>> retVec;
-	for (int i = 0; i < inVec.size(); i + 2) {
-		retVec.push_back(inVec[i]);
-	}
-	return retVec;
-}
-
-template <typename T>
-vector<T> getMinMaxElemsFromLines(vector<vector<T>> inVec) {
-	T minElem;
-	T maxElem;
-	vector<T> retVal;
-
-	for (int i = 0; i < inVec.size(); i++) {
-		minElem = inVec[i][0];
-		maxElem = inVec[i][0];
-		for (int j = 1; j < inVec[i].size(); j++) {
-			if (inVec[i][j] < minElem) {
-				minElem = inVec[i][j];
-			}
-			if (inVec[i][j] > maxElem) {
-				maxElem = inVec[i][j];
-			}
-		}
-		retVal.push_back(minElem);
-		retVal.push_back(maxElem);
-	}
-	return retVal;
-}
-
-template <typename T>
-void printOddNegativeLines(vector<vector<T>> inVec) {
-
-	if (inVec.size() < 1) {
-		cout << "Количество строк массива меньше 1" << endl;
-		return retVal;
-	}
-
-	for (int i = 1; i < inVec; i + 2) {
-		for (j = 0; j < inVec[i].size(); j++) {
-			if (inVec[i][j] < 0) {
-				cout << inVec[i][j] << " ";
-			}
-		}
-		cout << endl;
-	}
 }
