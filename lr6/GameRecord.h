@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <iostream>
 using namespace std;
 
 struct GameRecord
@@ -10,12 +11,19 @@ struct GameRecord
 	int year = 0;
 
 	// если strict == false, то пустые поля будут учитываться как успешно прошедшие проверку
-	bool equal(GameRecord testRecord, bool strictEq) const;
+	bool equal(GameRecord testRecord, bool strictEq = true) const;
 
 	bool empty() const;
 
 	void printRecord() const;
 
-	friend ostream& operator <<(ostream& os, GameRecord& outRec);
-	friend istream& operator >> (std::istream& in, GameRecord& inRec);
+	bool operator > (const GameRecord& comparedRec) const;
+
+	bool operator < (const GameRecord& comparedRec) const;
+
+
 };
+
+ostream& operator << (ostream& os, const GameRecord& gr);
+
+std::istream& operator >> (std::istream& in, GameRecord& gm);

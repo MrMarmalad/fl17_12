@@ -40,7 +40,7 @@ public:
 
 	int length() const;
 	bool empty() const;
-	int findElemByGenre(string genre);
+	List<T> findElemsByGenre(string genre);
 	List* insertBefore(T newRecord, int insPlace);
 	List* deleteFrom(int elemIndexToDelete);
 	bool changeElem(int index, T changedRecord);
@@ -54,7 +54,7 @@ public:
 	T getPrev();
 
 	template <typename V>
-		friend void printList(List<V>& listForPrinting);
+		friend void printList(List<V>& listForPrinting, bool debugInfo);
 	//
 	template <typename V>
 		friend ostream& operator <<(ostream& os, List<V>& outList);
@@ -66,18 +66,21 @@ public:
 	void writeToBinary(string fname);
 	void changeStringBinary(int index, T changedRecord, string fname);
 	void deleteStringFromBinary(int index, string fname);
-	int findFirstGameYearBinary(string fname);
+	T findFirstGameYearBinary(string fname);
 
+
+	//
+	void swap(int indexF, int indexS);
+	void sort(bool asc = true);
+
+	////
+	bool writeToFile(string fname);
+	bool readFromFile(string fname);
 };
 
 template <typename T>
 List<T> getRecordsYearsBefore(List<T> checkedList, int beforeYear);
 ostream& setup(ostream& stream);
-
-
-
-
-
 
 
 template <typename T>
@@ -281,16 +284,19 @@ void List<T>::operator +=(T newElem) {
 }
 
 template <typename T>
-int List<T>::findElemByGenre(string genre) {
+List<T> List<T>::findElemsByGenre(string genre) {
 	listElem* tmpElem = this->back;
-	for (int currentIndex = 0; currentIndex < this->length(); currentIndex++) {
-		if (tmpElem->Data.genre == genre) {
-			return currentIndex;
+	List<T> result;
+	if (typeid(T) == typeid(GameRecord)) {
+		for (int currentIndex = 0; currentIndex < this->length(); currentIndex++) {
+			if (tmpElem->Data.genre == genre) {
+				result += tmpElem->Data;
+			}
+			tmpElem = tmpElem->next;
 		}
-		tmpElem = tmpElem->next;
 	}
 
-	return -1;
+	return result;
 }
 
 template <typename T>
@@ -315,21 +321,35 @@ List<T> getRecordsYearsBefore(List<T> checkedList, int beforeYear) {
 }
 
 template <typename V>
-void printList(List<V>& listForPrinting)
+void printList(List<V>& listForPrinting, bool debugInfo = false)
 {
 	if (listForPrinting.empty()) {
 		cout << "Структура данных пуста" << endl << endl;
 		return;
 	}
 	int index = 0;
-	auto tmpElem = listForPrinting.back;
-	while (tmpElem->next != nullptr) {
-		cout << tmpElem->Data << endl;
-		tmpElem = tmpElem->next;
-		index++;
+	V tmpElem;
+
+	if (debugInfo) {
+		cout << "Вывод списка" << endl;
+		cout << "Back " << listForPrinting.back << "\tFront " << listForPrinting.front << endl;
 	}
 
-	cout << tmpElem->Data << endl;
+	auto tmpListEl = listForPrinting.back;
+	while (tmpListEl != nullptr) {
+		if (debugInfo) {
+			cout << tmpListEl->prev << endl;
+		}
+
+		cout << tmpListEl->Data << endl << endl;
+
+		if (debugInfo) {
+			cout << tmpListEl->next << endl << endl;
+		}
+
+		tmpListEl = tmpListEl->next;
+	}
+	cout << endl;
 }
 
 ostream& setup(ostream& stream)
@@ -339,23 +359,16 @@ ostream& setup(ostream& stream)
 	return stream;
 }
 
-/// <summary>
-/// Переделать
-/// </summary>
-/// <typeparam name="T"></typeparam>
-/// <param name="os"></param>
-/// <param name="outList"></param>
-/// <returns></returns>
+
 template <typename V>
 ostream& operator<<(ostream& os, List<V>& outList)
 {
 	outList.getElement(0);
 	V tmpRecord = outList.getElement(0);
-	//setup(os);
-	while (!tmpRecord.empty()) {
-		setup(os) << tmpRecord;
-		tmpRecord = outList.getNext();
+	for (int i = 0; i < outList.length(); i++) {
+		setup(os) << outList.getElement(i);
 	}
+
 	return os;
 }
 
@@ -363,7 +376,8 @@ template <typename V>
 istream& operator>>(std::istream& in, List<V>& inList)
 {
 	V newRecord;
-	while (in >> newRecord) {
+	while (!in.eof()) {
+		in >> newRecord;
 		inList.insertBefore(newRecord, inList.length());
 	}
 	return in;
@@ -372,18 +386,27 @@ istream& operator>>(std::istream& in, List<V>& inList)
 template <typename T>
 void List<T>::writeToBinary(string fname)
 {
-	std::fstream outStream;
-	std::ostringstream sstrm;
-	outStream.open(fname, fstream::out | fstream::binary | fstream::trunc);
+	fstream outStream;
+	stringstream ss;
+
+	outStream.open(fname, ios::out | ios::binary | ios::trunc);
 	if (!outStream) {
-		cout << "Ошибка открытия файла: " + fname << endl;
+		cout << "Ошибка открытия файла:" + fname << endl;
 		return;
 	}
+
 	T tmpRecord = this->getElement(0);
-	while (!tmpRecord.empty()) {
-		outStream << tmpRecord << "\n";
-		tmpRecord = this->getNext();
+	string writeString;
+
+	for (int i = 0; i < this->length(); i++) {
+		tmpRecord = this->getElement(i);
+		ss << tmpRecord;
+		if (i < this->length() - 1) {
+			ss << endl;
+		}
 	}
+	writeString = ss.str();
+	outStream.write(writeString.c_str(), writeString.size());
 	outStream.close();
 }
 
@@ -391,20 +414,19 @@ template <typename T>
 void List<T>::readFromBinary(string fname)
 {
 	std::fstream in;
-	in.open(fname, fstream::in | fstream::binary);
+	in.open(fname, ios::in | ios::binary);
 
 	if (!in) {
 		cout << "Ошибка открытия файла:" + fname << endl;
 		return;
 	}
 
-	//string genre, name;
-	T inRec;
-	int len;//, year;
-
-	while (in >> inRec) {
-		this->insertBefore(inRec, this->length());
+	T tmpRec;
+	while (!in.eof()) {
+		in >> tmpRec;
+		this->insertBefore(tmpRec, this->length());
 	}
+	in.close();
 }
 
 template <typename T>
@@ -422,21 +444,93 @@ void List<T>::deleteStringFromBinary(int index, string fname)
 }
 
 template <typename T>
-int List<T>::findFirstGameYearBinary(string fname)
+T List<T>::findFirstGameYearBinary(string fname)
 {
 	this->clearList();
 	this->readFromBinary(fname);
 
 	T tmpRecord = this->getElement(0);
-	int minYear = tmpRecord.year;
+	T retVal = this->getElement(0);
 
 	while (!tmpRecord.empty()) {
-		if (tmpRecord.year < minYear) {
-			minYear = tmpRecord.year;
+		if (tmpRecord < retVal) {
+			retVal = tmpRecord;
 		}
 		tmpRecord = this->getNext();
 	}
-	return minYear;
+	return retVal;
+}
+
+template<typename T>
+inline void List<T>::swap(int indexF, int indexS)
+{
+	T tmpRecord = this->getElement(indexF);
+	this->changeElem(indexF, this->getElement(indexS));
+	this->changeElem(indexS, tmpRecord);
+}
+
+template<typename T>
+inline void List<T>::sort(bool asc)
+{
+	// Сортировка массива пузырьком
+	for (int i = 0; i < this->length(); i++) {
+		for (int j = 0; j < this->length() - (i + 1); j++) {
+			if (asc) {
+				if (this->getElement(j) > this->getElement(j + 1)) {
+					this->swap(j, j + 1);
+
+				}
+			}
+			else {
+				if (this->getElement(j) < this->getElement(j + 1)) {
+					this->swap(j, j + 1);
+				}
+			}
+
+		}
+	}
+}
+
+template<typename T>
+inline bool List<T>::writeToFile(string fname)
+{
+	fstream out;
+	stringstream ss;
+	T tmpRecord;
+
+	out.open(fname, ios::out);
+	if (!out.is_open()) {
+		cout << "Невозможно открыть файл " << fname << endl;
+		return false;
+	}
+
+	for (int i = 0; i < this->length(); i++) {
+		tmpRecord = this->getElement(i);
+		ss << tmpRecord;
+	}
+	out << ss.str();
+	return true;
+}
+
+template<typename T>
+inline bool List<T>::readFromFile(string fname)
+{
+	fstream in;
+	T tmpRecord;
+
+
+	in.open(fname, ios::in);
+	if (!in.is_open()) {
+		cout << "Невозможно открыть файл " << fname << endl;
+		return false;
+	}
+
+	while (!in.eof()) {
+		in >> tmpRecord;
+		*this += tmpRecord;
+	}
+
+	return true;
 }
 
 template <typename T>
@@ -463,7 +557,7 @@ vector<vector<T>> readElemsFromFile(int iLen, int jLen, string filename) {
 }
 
 template <typename T>
-bool writeElemsFromFile(vector<vector<T>> inVec, string filename) {
+bool writeElemsToFile(vector<vector<T>> inVec, string filename) {
 	fstream out;
 	out.open(filename, fstream::write);
 	if (!out) {

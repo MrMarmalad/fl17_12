@@ -38,7 +38,15 @@ public:
 	void changeStringBinary(int index, T changedRecord, string fname);
 	void deleteStringFromBinary(int index, string fname);
 
-	int findFirstGameYearBinary(string fname);
+	T findFirstGameYearBinary(string fname);
+
+	//
+	void swap(int indexF, int indexS);
+	void sort(bool asc = true);
+
+	////
+	bool writeToFile(string fname);
+	bool readFromFile(string fname);
 
 private:
 	List<T> queueElems;
@@ -148,7 +156,7 @@ void Queue<T>::deleteStringFromBinary(int index, string fname)
 }
 
 template <typename T>
-int Queue<T>::findFirstGameYearBinary(string fname)
+T Queue<T>::findFirstGameYearBinary(string fname)
 {
 	return this->queueElems.findFirstGameYearBinary(fname);
 }
@@ -177,4 +185,25 @@ template <typename V>
 Queue<V> getRecordsYearsBefore(Queue<V> checkedQueue, int beforeYear) {
 	List<V> tmpList = getRecordsYearsBefore(checkedQueue.queueElems, beforeYear);
 	return Queue<V>(tmpList);
+}
+
+template <typename T>
+void Queue<T>::swap(int indexF, int indexS) {
+	this->queueElems->swap(indexF, indexS);
+}
+
+template <typename T>
+void Queue<T>::sort(bool asc) {
+	this->queueElems.sort(asc);
+}
+
+template <typename T>
+bool Queue<T>::writeToFile(string fname) {
+	return this->queueElems.writeToFile(fname);
+}
+
+template <typename T>
+bool Queue<T>::readFromFile(string fname)
+{
+	return this->queueElems.readFromFile(fname);
 }

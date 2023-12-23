@@ -1,7 +1,21 @@
-Game2 Genre2 1991
-Game3 Genre3 1992
-Game4 Genre4 1992
-Game5 Genre5 1993
-Game6 Genre6 1994
-Game7 Genre7 2000
-Game8 Genre8 2020
+SimCity
+Simulator
+1994
+Carmageddon
+Racing
+1996
+Quake
+Action
+1997
+StarCraft
+Strategy
+1998
+Resident Evil 2
+Action
+1998
+Animal Crossing
+Action
+2001
+Tony Hawk's Pro Skater
+Sport
+2002
