@@ -8,6 +8,7 @@
 #include "ListCont.h"
 #include "List.h"
 #include "Queue.h"
+#include "Ex1.h"
 
 using namespace std;
 
@@ -199,6 +200,15 @@ void queueContTesting() {
 int main() {
 	setlocale(LC_ALL, "rus");
 
+	cout << "Тест с double" << endl;
+	array_work<double>("arrayDouble");
+
+	cout << "Тест с short" << endl;
+	array_work<short>("arrayShort");
+
+	cout << "Тест с int" << endl;
+	array_work<int>("arrayInt");
+	
 	cout << endl << "======================================" << endl
 	<< "Тест шаблонного списка" << endl
 	<< "======================================" << endl;

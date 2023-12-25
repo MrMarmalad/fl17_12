@@ -132,6 +132,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GameRecord.h" />
+    <ClInclude Include="Ex1.h" />
     <ClInclude Include="Queue.h" />
     <ClInclude Include="List.h" />
     <ClInclude Include="QueueCont.h" />
