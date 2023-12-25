@@ -1,23 +1,32 @@
 #pragma once
 
 #include <iostream>
-#include <iomanip>
 #include <fstream>
 #include <sstream>
 #include <vector>
-#include <algorithm>
 
 #include "GameRecord.h"
+#include "Utils.h"
 
 using namespace std;
 
-template <typename T=GameRecord>
+template <typename T = GameRecord>
+
 class List
 {
 
 private:
+	struct listElem {
+		T Data;
+		listElem* prev = nullptr;
+		listElem* next = nullptr;
+	};
+	int size;
+	listElem* back;
+	listElem* front;
 
-	vector<T> listElems;
+	listElem* lastReadedElement;
+	int lastReadedIndex;
 
 public:
 	List();
@@ -38,17 +47,20 @@ public:
 	bool clearList();
 
 
+
 	T getElement(int index);
 	T getElement();
+	T getNext();
+	T getPrev();
 
 	template <typename V>
-		friend void printList(List<V>& listForPrinting);
+	friend void printList(List<V>& listForPrinting, bool debugInfo);
 	//
 	template <typename V>
-		friend ostream& operator <<(ostream& os, List<V>& outList);
+	friend ostream& operator <<(ostream& os, List<V>& outList);
 
 	template <typename V>
-		friend istream& operator >> (std::istream& in, List<V>& inList);
+	friend istream& operator >> (std::istream& in, List<V>& inList);
 
 	void readFromBinary(string fname);
 	void writeToBinary(string fname);
@@ -59,7 +71,7 @@ public:
 
 	//
 	void swap(int indexF, int indexS);
-	void sortList(bool asc = true);
+	void sort(bool asc = true);
 
 	////
 	bool writeToFile(string fname);
@@ -72,40 +84,116 @@ ostream& setup(ostream& stream);
 
 
 template <typename T>
-List<T>::List(){}
-
-template <typename T>
-List<T>::List(T firstRecord)
+List<T>::List()
+	: size{ 0 }, back{ nullptr }, front{ nullptr }, lastReadedElement{ nullptr }, lastReadedIndex{ -1 }
 {
-	this->listElems.push_back(firstRecord);
 }
 
 template <typename T>
-List<T>::~List() {}
+List<T>::List(T firstRecord) :
+	size{ 1 }, lastReadedElement{ nullptr }, lastReadedIndex{ -1 }
+{
+	listElem* newElem = new(listElem);
+	newElem->Data = firstRecord;
+
+	this->back = newElem;
+	this->front = newElem;
+}
+
+template <typename T>
+List<T>::~List()
+{
+}
 
 template <typename T>
 int List<T>::length() const {
-	return this->listElems.size();
+	return this->size;
 }
 
 template <typename T>
 bool List<T>::empty() const {
-	return this->listElems.size() == 0;
+	return this->length() == 0;
 }
 
 template <typename T>
 List<T>* List<T>::insertBefore(T newRecord, int insPlace) {
-	auto it = this->listElems.begin();
-	advance(it, insPlace);
-	this->listElems.insert(it, newRecord);
+	listElem* newElem;
+	listElem* tmpElem;
+
+	int elemCounter = 0;
+
+	newElem = new(listElem);
+	newElem->Data = newRecord;
+
+	if (this->empty()) {
+		this->back = newElem;
+		this->front = newElem;
+	}
+	else {
+		if (insPlace >= this->length()) {
+			tmpElem = this->front;
+			tmpElem->next = newElem;
+			newElem->prev = tmpElem;
+			this->front = newElem;
+		}
+		else if (insPlace <= 0) {
+			tmpElem = this->back;
+			tmpElem->prev = newElem;
+			newElem->next = this->back;
+			this->back = newElem;
+		}
+		else {
+			tmpElem = this->back;
+			while (elemCounter < insPlace) {
+				tmpElem = tmpElem->next;
+				elemCounter++;
+			}
+			newElem->next = tmpElem;
+			newElem->prev = tmpElem->prev;
+			tmpElem->prev->next = newElem;
+			tmpElem->prev = newElem;
+
+		}
+	}
+	this->size++;
 	return this;
 }
 
 template <typename T>
 List<T>* List<T>::deleteFrom(int elemIndexToDelete) {
-	auto it = this->listElems.begin();
-	advance(it, elemIndexToDelete);
-	this->listElems.erase(it);
+	listElem* tmpElem;
+	if (this->length() == 0) return this;
+
+	if (elemIndexToDelete <= 0) {
+		if (this->back->next != nullptr) {
+			tmpElem = this->back->next;
+			delete this->back;
+			this->back = tmpElem;
+			this->back->prev = nullptr;
+		}
+		else {
+			delete this->back;
+		}
+
+	}
+	else if (elemIndexToDelete >= this->length() - 1) {
+		tmpElem = this->front->prev;
+		delete this->front;
+		this->front = tmpElem;
+		this->front->next = nullptr;
+	}
+	else {
+		tmpElem = this->back;
+		for (int recordCounter = 0; recordCounter < elemIndexToDelete; recordCounter++) {
+			tmpElem = tmpElem->next;
+		}
+		tmpElem->next->prev = tmpElem->prev;
+		tmpElem->prev->next = tmpElem->next;
+
+		delete tmpElem;
+
+	}
+	this->size--;
 	return this;
 }
 
@@ -120,14 +208,30 @@ bool List<T>::changeElem(int index, T changedRecord)
 template <typename T>
 bool List<T>::clearList()
 {
-	this->listElems.clear();
+	while (!this->empty()) {
+		this->deleteFrom(0);
+	}
+	this->back = nullptr;
+	this->front = nullptr;
+	this->lastReadedElement = nullptr;
+	this->lastReadedIndex = -1;
 	return true;
 }
 
 template <typename T>
 T List<T>::getElement(int index)
 {
-	return this->listElems[index];
+	if (index > this->length() - 1 || index < 0) return T();
+	if (lastReadedIndex == index) return this->lastReadedElement->Data;
+
+	listElem* tmpRecord = this->back;
+	for (int i = 0; i < index; i++) {
+		tmpRecord = tmpRecord->next;
+		this->lastReadedIndex = i;
+	}
+	this->lastReadedElement = tmpRecord;
+	this->lastReadedIndex++;
+	return tmpRecord->Data;
 }
 
 template <typename T>
@@ -137,50 +241,87 @@ T List<T>::getElement()
 }
 
 template <typename T>
+T List<T>::getNext()
+{
+	T retVal = T();
+	if (lastReadedElement != nullptr &&
+		lastReadedIndex != -1 &&
+		lastReadedElement->next != nullptr)
+	{
+		lastReadedElement = lastReadedElement->next;
+		lastReadedIndex++;
+		retVal = lastReadedElement->Data;
+	}
+	return retVal;
+}
+
+template <typename T>
+T List<T>::getPrev()
+{
+	T retVal = T();
+	if (lastReadedElement == nullptr || lastReadedIndex == -1) {
+		cout << "Нет прочитанных ранее элементов" << endl;
+	}
+	else if (lastReadedElement->prev == nullptr) {
+		cout << "Это самый первый элемент" << endl;
+	}
+	else {
+		lastReadedElement = lastReadedElement->prev;
+		lastReadedIndex--;
+		retVal = lastReadedElement->Data;
+	}
+	return retVal;
+}
+
+template <typename T>
 void List<T>::operator -=(int elemIndexToDelete) {
 	this->deleteFrom(elemIndexToDelete);
 }
 
 template <typename T>
 void List<T>::operator +=(T newElem) {
-	this->listElems.push_back(newElem);
+	this->insertBefore(newElem, this->length());
 }
 
 template <typename T>
 List<T> List<T>::findElemsByGenre(string genre) {
-
+	listElem* tmpElem = this->back;
 	List<T> result;
 	if (typeid(T) == typeid(GameRecord)) {
-		for (int currentIndex = 0; currentIndex < this->listElems.size(); currentIndex++) {
-			if (this->listElems[currentIndex].genre == genre) {
-				result += this->listElems[currentIndex];
+		for (int currentIndex = 0; currentIndex < this->length(); currentIndex++) {
+			if (tmpElem->Data.genre == genre) {
+				result += tmpElem->Data;
 			}
+			tmpElem = tmpElem->next;
 		}
 	}
+
 	return result;
 }
 
 template <typename T>
 List<T> getRecordsYearsBefore(List<T> checkedList, int beforeYear) {
-	List<T> filteredList;
+	List filteredList;
 	T tmpRecord;
 
 	if (checkedList.empty()) {
 		cout << "Список пустой" << endl;
 	}
 	else {
-		tmpRecord = checkedList.getElement(0);
-		for (int i = 1; i < checkedList.length(); i++) {
-			if (checkedList.getElement(i) < tmpRecord) {
-				filteredList += checkedList.getElement(i);
+		tmpRecord = checkedList.getElement();
+		while (!tmpRecord.empty())
+		{
+			if (tmpRecord.year < beforeYear) {
+				filteredList.insertBefore(tmpRecord, filteredList.length());
 			}
+			tmpRecord = checkedList.getNext();
 		}
 	}
 	return filteredList;
 }
 
 template <typename V>
-void printList(List<V>& listForPrinting)
+void printList(List<V>& listForPrinting, bool debugInfo = false)
 {
 	if (listForPrinting.empty()) {
 		cout << "Структура данных пуста" << endl << endl;
@@ -189,20 +330,26 @@ void printList(List<V>& listForPrinting)
 	int index = 0;
 	V tmpElem;
 
-
-	for (int i = 0; i < listForPrinting.length(); i++) {
-		cout << listForPrinting.getElement(i);
-		if (i < listForPrinting.length() - 1) cout << endl << endl;
+	if (debugInfo) {
+		cout << "Вывод списка" << endl;
+		cout << "Back " << listForPrinting.back << "\tFront " << listForPrinting.front << endl;
 	}
 
-	cout << endl;
-}
+	auto tmpListEl = listForPrinting.back;
+	while (tmpListEl != nullptr) {
+		if (debugInfo) {
+			cout << tmpListEl->prev << endl;
+		}
 
-ostream& setup(ostream& stream)
-{
-	stream.setf(ios::left);
-	stream << setw(50);
-	return stream;
+		cout << tmpListEl->Data << endl << endl;
+
+		if (debugInfo) {
+			cout << tmpListEl->next << endl << endl;
+		}
+
+		tmpListEl = tmpListEl->next;
+	}
+	cout << endl;
 }
 
 
@@ -298,10 +445,11 @@ T List<T>::findFirstGameYearBinary(string fname)
 	T tmpRecord = this->getElement(0);
 	T retVal = this->getElement(0);
 
-	for (int i = 0; i < this->listElems.size(); i++) {
+	while (!tmpRecord.empty()) {
 		if (tmpRecord < retVal) {
 			retVal = tmpRecord;
 		}
+		tmpRecord = this->getNext();
 	}
 	return retVal;
 }
@@ -315,11 +463,24 @@ inline void List<T>::swap(int indexF, int indexS)
 }
 
 template<typename T>
-inline void List<T>::sortList(bool asc)
+inline void List<T>::sort(bool asc)
 {
-	sort(this->listElems.begin(), this->listElems.end());
-	if (!asc) {
-		reverse(this->listElems.begin(), this->listElems.end());
+	// Сортировка массива пузырьком
+	for (int i = 0; i < this->length(); i++) {
+		for (int j = 0; j < this->length() - (i + 1); j++) {
+			if (asc) {
+				if (this->getElement(j) > this->getElement(j + 1)) {
+					this->swap(j, j + 1);
+
+				}
+			}
+			else {
+				if (this->getElement(j) < this->getElement(j + 1)) {
+					this->swap(j, j + 1);
+				}
+			}
+
+		}
 	}
 }
 
@@ -364,7 +525,6 @@ inline bool List<T>::readFromFile(string fname)
 
 	return true;
 }
-
 
 template <typename T>
 vector<vector<T>> readElemsFromFile(int iLen, int jLen, string filename) {

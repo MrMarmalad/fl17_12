@@ -4,7 +4,7 @@
 
 #include "GameRecord.h"
 
-template <typename T=GameRecord>
+template <typename T = GameRecord>
 class Queue
 {
 public:
@@ -29,7 +29,7 @@ public:
 	//
 	template <typename V>
 	friend ostream& operator << (ostream& os, Queue<V>& outQueue);
-	
+
 	template <typename V>
 	friend istream& operator >> (std::istream& in, Queue<V>& inQueue);
 
@@ -42,7 +42,7 @@ public:
 
 	//
 	void swap(int indexF, int indexS);
-	void sortQueue(bool asc = true);
+	void sort(bool asc = true);
 
 	////
 	bool writeToFile(string fname);
@@ -60,12 +60,12 @@ Queue<T>::Queue()
 
 template <typename T>
 Queue<T>::Queue(T firstRecord)
-	:queueElems{ List<T>(firstRecord) }
+	: queueElems{ List<T>(firstRecord) }
 {}
 
 template <typename T>
 Queue<T>::Queue(List<T> initList)
-	:queueElems{ initList }
+	: queueElems{ initList }
 {}
 
 template <typename T>
@@ -193,8 +193,8 @@ void Queue<T>::swap(int indexF, int indexS) {
 }
 
 template <typename T>
-void Queue<T>::sortQueue(bool asc) {
-	this->queueElems.sortList(asc);
+void Queue<T>::sort(bool asc) {
+	this->queueElems.sort(asc);
 }
 
 template <typename T>
