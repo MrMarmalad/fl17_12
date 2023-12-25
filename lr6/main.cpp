@@ -30,34 +30,34 @@ void listTesting() {
 	}
 	else {
 		inOut >> testList;
-		testList.sort();
-		printList(testList, false);
+		testList.sortList();
+		printList(testList);
 		inOut.close();
 	}
 
-	testList.sort();
+	testList.sortList();
 
-	cout << "Запись в бинарь" << endl;
+	cout << endl << "Запись в бинарь" << endl;
 	testList.writeToBinary(ex2BinFname);
-	printList(testList, false);
+	printList(testList);
 	testList.clearList();
-	printList(testList, false);
+	printList(testList);
 	testList.readFromBinary(ex2BinFname);
 
-	testList.sort();
-	printList(testList, false);
+	testList.sortList();
+	printList(testList);
 
 	cout << "Изменение строк" << endl;
 	testList.changeStringBinary(0, { "The Legend Of Zelda: Ocarina of Time", "Action-adventure", 1998 }, ex2BinFname);
-	printList(testList, false);
+	printList(testList);
 
 	cout << "Удаление строки" << endl;
 	testList.deleteStringFromBinary(0, ex2BinFname);
-	printList(testList, false);
+	printList(testList);
 
 	cout << "Поиск по жанру" << endl;
 	auto testList2 = testList.findElemsByGenre("Action");
-	printList(testList2, false);
+	printList(testList2);
 	cout << endl;
 
 	cout << "Поиск игры самого раннего года выпуска" << endl;
@@ -82,7 +82,7 @@ void queueTesting() {
 		inOut.close();
 	}
 
-	testQueue.sort();
+	testQueue.sortQueue();
 
 	testQueue.writeToBinary(ex2BinFname);
 	printQueue(testQueue);
@@ -91,7 +91,7 @@ void queueTesting() {
 	testQueue.readFromBinary(ex2BinFname);
 	printQueue(testQueue);
 
-	testQueue.sort();
+	testQueue.sortQueue();
 
 	cout << "Изменение строк" << endl;
 	testQueue.changeStringBinary(0, { "The Legend Of Zelda: Ocarina of Time", "Action-adventure", 1998 }, ex2BinFname);

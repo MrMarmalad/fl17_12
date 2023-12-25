@@ -42,7 +42,7 @@ public:
 
 	//
 	void swap(int indexF, int indexS);
-	void sort(bool asc = true);
+	void sortQueue(bool asc = true);
 
 	////
 	bool writeToFile(string fname);
@@ -193,8 +193,8 @@ void Queue<T>::swap(int indexF, int indexS) {
 }
 
 template <typename T>
-void Queue<T>::sort(bool asc) {
-	this->queueElems.sort(asc);
+void Queue<T>::sortQueue(bool asc) {
+	this->queueElems.sortList(asc);
 }
 
 template <typename T>
